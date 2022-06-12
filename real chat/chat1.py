@@ -16,16 +16,19 @@ from datetime import datetime
 # print(addr)
 
 def f2(event):
-    pass
-#     # message = input("Enter message: ")
-#     message = entry.get()
-#     message = bytes(message, 'utf-8')
-#     entry.delete(0,tk.END)
-#     conn.sendall(message)
-#     now = datetime.now()
-#     date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
-#     previous = t.get() + '\n'
-#     t.set(f"{previous}{message.decode()}\t\t\t\t\tsent at {date_time}")
+    # message = input("Enter message: ")
+    message = text_area.get("1.0",'end-1c')
+    text_area.delete("1.0", 'end')
+    print(message)
+    # message_sent = True
+    # text_area.update()
+    # message = bytes(message, 'utf-8')
+    # entry.delete(0,tk.END)
+    # conn.sendall(message)
+    # now = datetime.now()
+    # date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+    # previous = t.get() + '\n'
+    # t.set(f"{previous}{message.decode()}\t\t\t\t\tsent at {date_time}")
 
 def f1():
     pass
@@ -78,7 +81,7 @@ frame_btns.place(relx=0, rely=0.805, relwidth=0.2, relheight=0.2)
 text_area = scrolledtext.ScrolledText(frame_messages, wrap = tk.WORD, width = 40, height = 10, font = ("Times New Roman",15))
 text_area.pack(side='top', fill='both', padx=2, pady=2)
 text_area.focus()
-# text_area.bind("<Return>", f2)
+text_area.bind("<Insert>", f2)
 t = tk.StringVar(frame_sent_messages)
 lbl_sent_messages = tk.Label(frame_sent_messages, text='test')
 lbl_time_sent_messages = tk.Label(frame_sent_messages, text='time')
