@@ -8,15 +8,19 @@ from tkinter import scrolledtext
 from datetime import datetime
 
 IP = '127.0.0.1'
-PORT = 55557
+PORT = 55558
 print("Starting Client: ")
 conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 conn.connect((IP, PORT))
-pretty_point = str(conn).find("raddr=") + 6 # 6 ta ham bekhater hamin horoofe raddr=
-addr = str(conn)[pretty_point:-1]
 print(conn)
-print(addr)
+laddr_point = str(conn).find("laddr=")
+laddr_point += 6 # 6 ta ham bekhater hamin horoofe laddr=
+raddr_point = str(conn).find("raddr=")
+raddr_point += 6 # 6 ta ham bekhater hamin horoofe raddr=
+laddr = str(conn)[laddr_point:raddr_point-6-2] # -6 bekhatere ine ke raddr= ro ezafe karde boodam. -2 be khatere ine ke , va space e akhar nayofteh.
+raddr = str(conn)[raddr_point:-1] # ta -1 be khatere ine ke alamate > nayofteh.
+print(f"{laddr=}\n{raddr=}")
 
 
 def refresh_messages():
@@ -31,25 +35,47 @@ def send_message_function(event):
     text_area.delete("1.0", 'end')
     message = message.strip()
     if message != "":
-        list_sent_messages.append(message)
-        list_sent_messages_time.append(datetime.now().strftime("%H:%M:%S"))
-        message = bytes(message, 'utf-8')
-        conn.sendall(message)
-        refresh_messages()
+        try:
+            message_in_bytes = bytes(message, 'utf-8')
+            conn.sendall(message_in_bytes)
+            list_sent_messages.append(message)
+            list_sent_messages_time.append(datetime.now().strftime("%H:%M:%S"))
+            refresh_messages()
+        except BrokenPipeError:
+            msb.showerror("Connection Error.", "The Pipe is Broken :(")
 
 def receive_message_function():
     try:
-        msb.showinfo('Successfull Connection', f'Connected by {addr}')
-        frame_received_messages.config(text=f"You are chatting with {addr}")
-        frame_sent_messages.config(text=f"You Info {IP}:{PORT}")
+        msb.showinfo('Successfull Connection', f'Connected by {raddr}')
+        frame_received_messages.config(text=f"You are chatting with: {raddr}")
+        frame_sent_messages.config(text=f"You Info: {laddr}")
         while True:
             data = conn.recv(1024).decode()
-            list_received_messages.append(data)
-            list_received_messages_time.append(datetime.now().strftime("%H:%M:%S"))
-            refresh_messages()
+            if data[0] == "M":
+                list_received_messages.append(data)
+                list_received_messages_time.append(datetime.now().strftime("%H:%M:%S"))
+                refresh_messages()
+            elif data[0] == "F":
+                with open('alaki', 'wb') as f:
+                    while True:
+                        data = conn.recv(1024)
+                        f.write(data)
+                        if data == b'':
+                            break
+                msb.showinfo("Done", "File Downloaded!")
     except:
         msb.showerror("Connection Error.", "Connection Lost!")
-        
+
+def receive_a_file():
+    with open('alaki', 'wb') as f:
+        while True:
+            data = conn.recv(1024)
+            f.write(data)
+            if data == b'':
+                break
+    msb.showinfo("Done", "File Downloaded!")
+
+
 
 def clear(event='Alaki event'):
     list_received_messages.clear()
@@ -81,12 +107,12 @@ list_received_messages_time = []
 list_sent_messages_time = []
 ####################################### UI #######################################
 root = tk.Tk()
-root.title("Chat Server")
+root.title("Chat Client")
 root.config(bg='dark cyan')
 root.bind("<Delete>", clear)
 SCREEN_WIDTH = root.winfo_screenwidth()
 SCREEN_HEIGHT = root.winfo_screenheight()
-root.geometry(f"{SCREEN_WIDTH//2}x{SCREEN_HEIGHT//2}")
+root.geometry(f"{SCREEN_WIDTH//2}x{SCREEN_HEIGHT//2}+0+{SCREEN_HEIGHT//4}")
 frame_sent_messages = tk.LabelFrame(root, bg='sky blue', text='Your ip')
 frame_received_messages = tk.LabelFrame(root, bg='light green', text='You are chatting with: others ip')
 frame_messages = tk.LabelFrame(root, bg='light cyan')
@@ -123,10 +149,14 @@ btn_send_message.place(relx=0.55, rely=0.05, relwidth=0.4, relheight=0.4)
 btn_clear.place(relx=0.55, rely=0.55, relwidth=0.4, relheight=0.4)
 btn_exit.place(relx=0.05, rely=0.55, relwidth=0.4, relheight=0.4)
 # ####################################### End UI #######################################
+
+# ####################################### Threads #######################################
 thread_send_text = threading.Thread(target=receive_message_function)
 thread_send_text.setDaemon(True)
 thread_send_text.start()
 thread_receive_text = threading.Thread(target=send_message_function, args=("Alaki string", ))
 thread_receive_text.setDaemon(True)
 thread_receive_text.start()
+# ####################################### End Threads #######################################
+
 root.mainloop()
