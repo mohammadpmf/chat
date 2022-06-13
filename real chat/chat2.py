@@ -8,7 +8,7 @@ from tkinter import scrolledtext
 from datetime import datetime
 
 IP = '127.0.0.1'
-PORT = 55557
+PORT = 55559
 print("Starting Client: ")
 conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -110,15 +110,18 @@ def clear(event='Alaki event'):
     text_area.delete("1.0", 'end')
     
 def send_file(file_name):
-    try:
-        conn.sendall("Madval Is Sending a File!!!!!!".encode()) # avvalesh ye code vase handshake gozashtam.
-        conn.sendall(text_area.get().encode())
-        list_sent_messages.append(text_area.get())
-        list_sent_messages_time.append(datetime.now().strftime("%H:%M:%S"))
-        refresh_messages()
-    except BrokenPipeError:
-        msb.showerror("Connection Error.", "The Pipe is Broken :(")
-
+    message = text_area.get("1.0", 'end-1c')
+    text_area.delete("1.0", 'end')
+    message = message.strip()
+    if message != "":
+        try:
+            conn.sendall("Madval Is Sending a File!!!!!!".encode()) # avvalesh ye code vase handshake gozashtam.
+            conn.sendall(message.encode())
+            list_sent_messages.append(message)
+            list_sent_messages_time.append(datetime.now().strftime("%H:%M:%S"))
+            refresh_messages()
+        except BrokenPipeError:
+            msb.showerror("Connection Error.", "The Pipe is Broken :(")
     # with open(file_name, 'rb') as f:
     #     data = f.read().decode()
     #     data = "F" + data # avvalesh ye F bozorg ezafe kardam ke yani file hast in data.
