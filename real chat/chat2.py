@@ -8,7 +8,7 @@ from tkinter import scrolledtext
 from datetime import datetime
 
 IP = '127.0.0.1'
-PORT = 55558
+PORT = 55557
 print("Starting Client: ")
 conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -21,6 +21,18 @@ raddr_point += 6 # 6 ta ham bekhater hamin horoofe raddr=
 laddr = str(conn)[laddr_point:raddr_point-6-2] # -6 bekhatere ine ke raddr= ro ezafe karde boodam. -2 be khatere ine ke , va space e akhar nayofteh.
 raddr = str(conn)[raddr_point:-1] # ta -1 be khatere ine ke alamate > nayofteh.
 print(f"{laddr=}\n{raddr=}")
+
+def choose_file():
+    file_name = fd.askopenfilename()
+    if file_name in ['', ()]:
+        msb.showwarning("No file selected!", "You should choose a File!")
+    else:
+        if msb.askyesno("Confirmation?", f"Are you sure you want to send file {file_name} to {raddr}?"):
+            new_thread = threading.Thread(target=send_file, args=(file_name,))
+            new_thread.setDaemon(True)
+            new_thread.start()
+        else:
+            msb.showinfo("OK", "File did not send.")
 
 
 def refresh_messages():
@@ -36,8 +48,8 @@ def send_message_function(event):
     message = message.strip()
     if message != "":
         try:
-            message_in_bytes = bytes(message, 'utf-8')
-            conn.sendall(message_in_bytes)
+            conn.sendall("Madval Is Sending a Message!!!".encode()) # avvalesh ye code vase handshake gozashtam.
+            conn.sendall(message.encode())
             list_sent_messages.append(message)
             list_sent_messages_time.append(datetime.now().strftime("%H:%M:%S"))
             refresh_messages()
@@ -45,26 +57,35 @@ def send_message_function(event):
             msb.showerror("Connection Error.", "The Pipe is Broken :(")
 
 def receive_message_function():
+    pass
+
+def receive_function():    
     try:
         msb.showinfo('Successfull Connection', f'Connected by {raddr}')
         frame_received_messages.config(text=f"You are chatting with: {raddr}")
         frame_sent_messages.config(text=f"You Info: {laddr}")
         while True:
-            data = conn.recv(1024).decode()
-            if data[0] == "M":
+            hand_shake = conn.recv(30).decode()
+            if hand_shake == "Madval Is Sending a Message!!!":
+                data = conn.recv(1024).decode()
                 list_received_messages.append(data)
                 list_received_messages_time.append(datetime.now().strftime("%H:%M:%S"))
                 refresh_messages()
-            elif data[0] == "F":
-                with open('alaki', 'wb') as f:
-                    while True:
-                        data = conn.recv(1024)
-                        f.write(data)
-                        if data == b'':
-                            break
-                msb.showinfo("Done", "File Downloaded!")
+                print('message')
+            elif hand_shake == "Madval Is Sending a File!!!!!!":
+                data = conn.recv(1024).decode()
+                list_received_messages.append(data)
+                list_received_messages_time.append(datetime.now().strftime("%H:%M:%S"))
+                refresh_messages()
+                print('file')
     except:
         msb.showerror("Connection Error.", "Connection Lost!")
+    # thread_receive_text = threading.Thread(target=receive_message_function)
+    # thread_receive_text.setDaemon(True)
+    # thread_receive_text.start()
+    # thread_receive_file = threading.Thread(target=receive_file_function)
+    # thread_receive_file.setDaemon(True)
+    # thread_receive_file.start()
 
 def receive_a_file():
     with open('alaki', 'wb') as f:
@@ -88,17 +109,22 @@ def clear(event='Alaki event'):
     received_message_time.set('')
     text_area.delete("1.0", 'end')
     
-def send_file():
-    pass
-#     def send_it(fname):
-#         with open(fname, 'rb') as f:
-#             data = f.read()
-#             conn.sendall(data)
-#         msb.showinfo("Sent!", f"{fname}'s Data Sent!\n But I'm not sure the receiver got it completely :D")
-#     file_name = fd.askopenfilename()
-#     if file_name in ['', ()]: # User didn't choose any file
-#         return
-#     threading.Thread(target=send_it, args=(file_name,)).start()
+def send_file(file_name):
+    try:
+        conn.sendall("Madval Is Sending a File!!!!!!".encode()) # avvalesh ye code vase handshake gozashtam.
+        conn.sendall(text_area.get().encode())
+        list_sent_messages.append(text_area.get())
+        list_sent_messages_time.append(datetime.now().strftime("%H:%M:%S"))
+        refresh_messages()
+    except BrokenPipeError:
+        msb.showerror("Connection Error.", "The Pipe is Broken :(")
+
+    # with open(file_name, 'rb') as f:
+    #     data = f.read().decode()
+    #     data = "F" + data # avvalesh ye F bozorg ezafe kardam ke yani file hast in data.
+    #     data = data.encode()
+    #     conn.sendall(data)
+    # msb.showinfo("Sent!", f"{file_name}'s Data Sent!\n But I'm not sure the receiver got it completely :D")
 
 
 list_received_messages = []
@@ -139,7 +165,7 @@ lbl_time_sent_messages.place(relx=0.77, rely=0.01, relwidth=0.22, relheight=0.98
 lbl_received_messages.place(relx=0.01, rely=0.01, relwidth=0.75, relheight=0.98)
 lbl_time_received_messages.place(relx=0.77, rely=0.01, relwidth=0.22, relheight=0.98)
 
-btn_send_file = tk.Button(frame_btns, text='Send File ...', command=send_file, font=('', 6))
+btn_send_file = tk.Button(frame_btns, text='Send File ...', command=choose_file, font=('', 6))
 btn_send_message = tk.Button(frame_btns, text='Send', command=lambda:send_message_function("Alaki String"), font=('', 10))
 btn_clear = tk.Button(frame_btns, text='Clear', command=clear, font=('', 10))
 btn_exit = tk.Button(frame_btns, text='Exit', command=root.destroy, font=('', 10))
@@ -151,12 +177,12 @@ btn_exit.place(relx=0.05, rely=0.55, relwidth=0.4, relheight=0.4)
 # ####################################### End UI #######################################
 
 # ####################################### Threads #######################################
-thread_send_text = threading.Thread(target=receive_message_function)
+thread_receive = threading.Thread(target=receive_function)
+thread_receive.setDaemon(True)
+thread_receive.start()
+thread_send_text = threading.Thread(target=send_message_function, args=("Alaki string", ))
 thread_send_text.setDaemon(True)
 thread_send_text.start()
-thread_receive_text = threading.Thread(target=send_message_function, args=("Alaki string", ))
-thread_receive_text.setDaemon(True)
-thread_receive_text.start()
 # ####################################### End Threads #######################################
 
 root.mainloop()
