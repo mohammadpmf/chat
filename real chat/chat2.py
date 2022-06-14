@@ -8,7 +8,7 @@ from tkinter import scrolledtext
 from datetime import datetime
 
 IP = '127.0.0.1'
-PORT = 55559
+PORT = 55557
 print("Starting Client: ")
 conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -57,8 +57,20 @@ def send_message_function(event):
             msb.showerror("Connection Error.", "The Pipe is Broken :(")
 
 def receive_message_function():
-    pass
-
+    data = conn.recv(1024).decode()
+    list_received_messages.append(data)
+    list_received_messages_time.append(datetime.now().strftime("%H:%M:%S"))
+    refresh_messages()
+    print('message')
+def receive_file_function():
+    with open('harchi', 'w') as f:
+        while True:
+            data = conn.recv(1024)
+            print(data)
+            f.write(data.decode())
+            if data == b'':
+                break
+    print('file')
 def receive_function():    
     try:
         msb.showinfo('Successfull Connection', f'Connected by {raddr}')
@@ -67,17 +79,11 @@ def receive_function():
         while True:
             hand_shake = conn.recv(30).decode()
             if hand_shake == "Madval Is Sending a Message!!!":
-                data = conn.recv(1024).decode()
-                list_received_messages.append(data)
-                list_received_messages_time.append(datetime.now().strftime("%H:%M:%S"))
-                refresh_messages()
-                print('message')
+                receive_message_function()
             elif hand_shake == "Madval Is Sending a File!!!!!!":
-                data = conn.recv(1024).decode()
-                list_received_messages.append(data)
-                list_received_messages_time.append(datetime.now().strftime("%H:%M:%S"))
-                refresh_messages()
-                print('file')
+                receive_file_function()
+
+
     except:
         msb.showerror("Connection Error.", "Connection Lost!")
     # thread_receive_text = threading.Thread(target=receive_message_function)
@@ -110,24 +116,20 @@ def clear(event='Alaki event'):
     text_area.delete("1.0", 'end')
     
 def send_file(file_name):
-    message = text_area.get("1.0", 'end-1c')
-    text_area.delete("1.0", 'end')
-    message = message.strip()
-    if message != "":
-        try:
-            conn.sendall("Madval Is Sending a File!!!!!!".encode()) # avvalesh ye code vase handshake gozashtam.
-            conn.sendall(message.encode())
-            list_sent_messages.append(message)
-            list_sent_messages_time.append(datetime.now().strftime("%H:%M:%S"))
-            refresh_messages()
-        except BrokenPipeError:
-            msb.showerror("Connection Error.", "The Pipe is Broken :(")
     # with open(file_name, 'rb') as f:
-    #     data = f.read().decode()
-    #     data = "F" + data # avvalesh ye F bozorg ezafe kardam ke yani file hast in data.
-    #     data = data.encode()
-    #     conn.sendall(data)
-    # msb.showinfo("Sent!", f"{file_name}'s Data Sent!\n But I'm not sure the receiver got it completely :D")
+    with open(file_name, 'r') as f:
+        conn.sendall("Madval Is Sending a File!!!!!!".encode()) # avvalesh ye code vase handshake gozashtam.
+        data = f.read().encode()
+        conn.sendall(data)
+    msb.showinfo("Sent!", f"{file_name}'s Data Sent!\n But I'm not sure the receiver got it completely :D")
+    # try:
+    #     conn.sendall("Madval Is Sending a File!!!!!!".encode()) # avvalesh ye code vase handshake gozashtam.
+    #     conn.sendall(message.encode())
+    #     list_sent_messages.append(message)
+    #     list_sent_messages_time.append(datetime.now().strftime("%H:%M:%S"))
+    #     refresh_messages()
+    # except BrokenPipeError:
+    #     msb.showerror("Connection Error.", "The Pipe is Broken :(")
 
 
 list_received_messages = []
