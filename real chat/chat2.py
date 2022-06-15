@@ -8,7 +8,7 @@ from tkinter import scrolledtext
 from datetime import datetime
 
 IP = '127.0.0.1'
-PORT = 55557
+PORT = 55555
 print("Starting Client: ")
 conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -63,13 +63,20 @@ def receive_message_function():
     refresh_messages()
     print('message')
 def receive_file_function():
-    with open('harchi', 'w') as f:
-        while True:
-            data = conn.recv(1024)
+    full_file = b''
+    while True:
+        data = conn.recv(1024)
+        print(data)
+        if b'File Sent!!!!!!' in data:
+            index = data.find(b'File Sent!!!!!!')
+            data = data[0:index]
+            full_file += data
             print(data)
-            f.write(data.decode())
-            if data == b'':
-                break
+            break
+        else:
+            full_file += data
+    with open('harchi', 'wb') as f:
+        f.write(full_file)
     print('file')
 def receive_function():    
     try:
@@ -117,10 +124,12 @@ def clear(event='Alaki event'):
     
 def send_file(file_name):
     # with open(file_name, 'rb') as f:
-    with open(file_name, 'r') as f:
+    with open(file_name, 'rb') as f:
         conn.sendall("Madval Is Sending a File!!!!!!".encode()) # avvalesh ye code vase handshake gozashtam.
-        data = f.read().encode()
+        data = f.read()
         conn.sendall(data)
+        conn.sendall("File Sent!!!!!!".encode()) # Akharesh ham oonvar montazer hast. Behesh migam har vaght ino gerefti tamoom shodeh kare ersale aks.
+
     msb.showinfo("Sent!", f"{file_name}'s Data Sent!\n But I'm not sure the receiver got it completely :D")
     # try:
     #     conn.sendall("Madval Is Sending a File!!!!!!".encode()) # avvalesh ye code vase handshake gozashtam.
