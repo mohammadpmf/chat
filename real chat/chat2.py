@@ -9,6 +9,9 @@ from tkinter import scrolledtext
 from datetime import datetime
 
 
+# from . import my_functions
+
+
 IP = '127.0.0.1'
 PORT = 55555
 print("Starting Client: ")
@@ -25,17 +28,17 @@ raddr = str(conn)[raddr_point:-1] # ta -1 be khatere ine ke alamate > nayofteh.
 print(f"{laddr=}\n{raddr=}")
 
 
-def choose_file():
+def choose_file(destination="Unknown person!!!"):
     file_name = fd.askopenfilename()
     if file_name in ['', ()]:
         msb.showwarning("No file selected!", "You should choose a File!")
     else:
-        if msb.askyesno("Confirmation?", f"Are you sure you want to send file {file_name} to {raddr}?"):
+        if msb.askyesno("Confirmation?", f"Are you sure you want to send file {file_name} to {destination}?"):
             new_thread = threading.Thread(target=send_file, args=(file_name,))
             new_thread.setDaemon(True)
             new_thread.start()
         else:
-            msb.showinfo("OK", "File did not send.")
+            msb.showinfo("OK", f"File did not send to {destination}.")
 
 
 def refresh_messages():
@@ -193,7 +196,7 @@ lbl_time_sent_messages.place(relx=0.77, rely=0.01, relwidth=0.22, relheight=0.98
 lbl_received_messages.place(relx=0.01, rely=0.01, relwidth=0.75, relheight=0.98)
 lbl_time_received_messages.place(relx=0.77, rely=0.01, relwidth=0.22, relheight=0.98)
 
-btn_send_file = tk.Button(frame_btns, text='Send File ...', command=choose_file, font=('', 6))
+btn_send_file = tk.Button(frame_btns, text='Send File ...', command=lambda: choose_file(destination=raddr), font=('', 6))
 btn_send_message = tk.Button(frame_btns, text='Send', command=lambda:send_message_function("Alaki String"), font=('', 10))
 btn_clear = tk.Button(frame_btns, text='Clear', command=clear, font=('', 10))
 btn_exit = tk.Button(frame_btns, text='Exit', command=root.destroy, font=('', 10))
