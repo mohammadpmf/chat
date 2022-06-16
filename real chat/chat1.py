@@ -1,11 +1,13 @@
 import socket
 import threading
+import os
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.messagebox as msb
 from tkinter import filedialog as fd
 from tkinter import scrolledtext
 from datetime import datetime
+
 
 IP = '127.0.0.1'
 PORT = 55555
@@ -14,6 +16,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((IP, PORT))
 s.listen()
 conn, addr = s.accept()
+
 print(conn)
 print(addr)
 laddr_point = str(conn).find("laddr=")
@@ -36,6 +39,7 @@ def choose_file():
             new_thread.start()
         else:
             msb.showinfo("OK", "File did not send.")
+
 
 def refresh_messages():
     sent_message.set('\n'.join(list_sent_messages))
@@ -65,22 +69,44 @@ def receive_message_function():
     list_received_messages_time.append(datetime.now().strftime("%H:%M:%S"))
     refresh_messages()
     print('message')
+
+
 def receive_file_function():
-    full_file = b''
+    full_file_bits = b''
     while True:
         data = conn.recv(1024)
         print(data)
         if b'File Sent!!!!!!' in data:
             index = data.find(b'File Sent!!!!!!')
             data = data[0:index]
-            full_file += data
+            full_file_bits += data
             print(data)
             break
         else:
-            full_file += data
-    with open('harchi', 'wb') as f:
-        f.write(full_file)
-    print('file')
+            full_file_bits += data
+    file_name = fd.asksaveasfilename(
+        filetypes=(
+            ("All Files", "*.*"),
+            ("MS Word Files", "*.docx"),
+            ("PDF Files", "*.pdf"),
+            ("Python Files", '*.py'),
+            ("Text Files", '*.txt'),
+            ("Video Files", "*.mp4"),
+            ("Video Files", "*.mpeg4"),
+            ("Video Files", "*.mkv"),
+            ("Video Files", "*.avi"),
+            ("Audio Files", ("*.mp3", "*.mpeg3", "*.wav")),
+            ("Files that start with 'c' :D", "c*.*"),
+            ),
+        defaultextension=".docx" # ba in pish farz zakhire mikoneh age .pasvand ro nanvisim. Yani vaghti too esm e file . bezarim dg pishfarz ro entekhab nemikoneh.
+        )
+    if file_name in ['', ()]:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        file_name = f"{dir_path}/default.docx"
+    with open(file_name, 'wb') as f:
+        f.write(full_file_bits)
+
+
 def receive_function():    
     try:
         msb.showinfo('Successfull Connection', f'Connected by {raddr}')
@@ -92,9 +118,6 @@ def receive_function():
                 receive_message_function()
             elif hand_shake == "Madval Is Sending a File!!!!!!":
                 receive_file_function()
-
-
-
     except:
         msb.showerror("Connection Error.", "Connection Lost!")
     # thread_receive_text = threading.Thread(target=receive_message_function)
@@ -103,15 +126,7 @@ def receive_function():
     # thread_receive_file = threading.Thread(target=receive_file_function)
     # thread_receive_file.setDaemon(True)
     # thread_receive_file.start()
-        
-def receive_a_file():
-    with open('alaki', 'wb') as f:
-        while True:
-            data = conn.recv(1024)
-            f.write(data)
-            if data == b'':
-                break
-    msb.showinfo("Done", "File Downloaded!")
+
 
 def clear(event='Alaki event'):
     list_received_messages.clear()
@@ -123,7 +138,8 @@ def clear(event='Alaki event'):
     received_message.set('')
     received_message_time.set('')
     text_area.delete("1.0", 'end')
-    
+
+
 def send_file(file_name):
     # with open(file_name, 'rb') as f:
     with open(file_name, 'rb') as f:
@@ -141,7 +157,6 @@ def send_file(file_name):
     #     refresh_messages()
     # except BrokenPipeError:
     #     msb.showerror("Connection Error.", "The Pipe is Broken :(")
-
 
 
 list_received_messages = []
